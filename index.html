@@ -159,7 +159,7 @@ td:first-child{font:700 18px Amiri;white-space:nowrap}
 .q button{font:600 14px 'Noto Naskh Arabic';margin-top:4px;background:var(--sage);color:#fff;border:0;border-radius:8px;padding:2px 14px;cursor:pointer}
 .note{font-size:13px;color:var(--soft);border-top:1px solid var(--line);margin-top:12px;padding-top:6px}
 footer{text-align:center;color:var(--soft);font-size:13px;padding:0 14px 30px}
-@media print{nav,.tabs,.tools,.stage,.header-bg{display:none}.page{animation:none;break-after:page;box-shadow:none}}
+@media print{nav,.tabs,.tools,.stage,.header-bg,.totop{display:none}.page{animation:none;break-after:page;box-shadow:none}}
 
 @keyframes fadeZoomIn{
   from{opacity:0;transform:scale(.92) translateY(8px)}
@@ -167,6 +167,39 @@ footer{text-align:center;color:var(--soft);font-size:13px;padding:0 14px 30px}
 }
 @media (prefers-reduced-motion:reduce){
   .card3d{animation:none!important}
+}
+
+/* ===================== زر العودة للأعلى ===================== */
+.totop{
+  position:fixed;
+  left:16px;
+  bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  z-index:900;
+  width:48px;height:48px;
+  display:grid;place-items:center;
+  border:1.5px solid var(--latte);
+  border-radius:50%;
+  background:linear-gradient(145deg,var(--paper),var(--bg));
+  color:var(--sage);
+  box-shadow:0 6px 16px var(--shadow);
+  cursor:pointer;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(12px) scale(.9);
+  transition:opacity .3s ease,transform .3s ease,visibility 0s linear .3s,background-color .5s,border-color .5s;
+}
+.totop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.totop.show{
+  opacity:1;visibility:visible;transform:translateY(0) scale(1);
+  transition:opacity .3s ease,transform .3s ease,visibility 0s linear 0s,background-color .5s,border-color .5s;
+}
+.totop:hover{transform:translateY(-2px) scale(1.05)}
+.totop:active{transform:translateY(0) scale(.96)}
+.totop:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+body.bkopen .totop{display:none}
+@media (prefers-reduced-motion:reduce){
+  .totop{transition:opacity .2s,visibility 0s linear .2s}
+  .totop.show{transition:opacity .2s,visibility 0s linear 0s}
 }
 </style>
 </head>
@@ -185,6 +218,11 @@ footer{text-align:center;color:var(--soft);font-size:13px;padding:0 14px 30px}
 <div class="tabs" id="tabs"></div>
 <div class="book" id="book"></div>
 </main>
+
+<button id="toTop" class="totop" aria-label="العودة إلى الأعلى" title="العودة إلى الأعلى">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
 <script>
 const V=[
 ["الٓمٓر ۚ تِلْكَ آيَاتُ الْكِتَابِ ۗ وَالَّذِي أُنزِلَ إِلَيْكَ مِن رَّبِّكَ الْحَقُّ وَلَٰكِنَّ أَكْثَرَ النَّاسِ لَا يُؤْمِنُونَ",
@@ -721,6 +759,46 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(!ov.hi
   }
 
   /* خلفية الترويسة ثابتة (class="show" على العنصر) */
+})();
+</script>
+<script>
+/* ===================== زر العودة للأعلى ===================== */
+(function(){
+  'use strict';
+  const btn = document.getElementById('toTop');
+  if(!btn) return;
+
+  const THRESHOLD = 300; /* يظهر بعد 300 بكسل من التمرير */
+
+  function update(){
+    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    btn.classList.toggle('show', y > THRESHOLD);
+  }
+
+  function scrollTop(){
+    const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    window.scrollTo({top:0, behavior: reduce ? 'auto' : 'smooth'});
+  }
+
+  btn.addEventListener('click', scrollTop);
+
+  /* تحديث عند التمرير (throttle بـ requestAnimationFrame) */
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if(!ticking){
+      ticking = true;
+      requestAnimationFrame(() => { update(); ticking = false; });
+    }
+  }, {passive:true});
+
+  /* تحديث عند فتح/إغلاق وضع الكتاب، وتبديل الصفحات، وغيرها */
+  new MutationObserver(update).observe(document.body, {attributes:true, attributeFilter:['class']});
+
+  /* تحديث عند إعادة الرسم (تغيير الصفحة/الآية) */
+  document.addEventListener('click', () => setTimeout(update, 50));
+
+  /* تحديث أولي */
+  update();
 })();
 </script>
 <script>
